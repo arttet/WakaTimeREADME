@@ -1,0 +1,37 @@
+[http_client]
+max_retries = 5
+timeout = "10s"
+
+[wakatime]
+api_key = ""
+
+base_url = "https://wakatime.com/api/v1/"
+time_range = "last_7_days"
+
+[content]
+date_style = "%d %B, %Y"
+block_style = "░▒▓█"
+progress_bar_len = 50
+language_count = 5
+threshold = "10m"
+
+show_title = true
+show_time = true
+show_total_time = true
+
+[git]
+token = ""
+
+base_url = "https://github.com"
+repository = ""
+branch_name = "main"
+file_path = "README.md"
+
+begin_block = "[comment]: <> (BEGIN WAKATIME BOT MANAGED BLOCK)"
+end_block = "[comment]: <> (END WAKATIME BOT MANAGED BLOCK)"
+
+author_name = ""
+author_email = ""
+committer_name = ""
+committer_email = ""
+commit_message = "Update WakaTime dashboard with new metrics in README.md"
