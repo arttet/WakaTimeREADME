@@ -1,1 +1,1 @@
-# WakaTimeREADME
+# WakaTime Bot
