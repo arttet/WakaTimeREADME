@@ -6,8 +6,7 @@ use duration_str::deserialize_duration;
 use std::env;
 use std::time::Duration;
 
-const CONFIG_FILE: &'static str =
-    include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/config/config.toml"));
+const CONFIG_FILE: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/config/config.toml"));
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum TimeRange {
@@ -98,7 +97,7 @@ pub struct Config {
 impl Config {
     pub fn new() -> Self {
         // Load default configuration from a file
-        let mut cfg: Config = toml::from_str(&CONFIG_FILE).expect("Failed to parse TOML.");
+        let mut cfg: Config = toml::from_str(CONFIG_FILE).expect("Failed to parse TOML.");
 
         // Load required environment variables
         cfg.wakatime.api_key =

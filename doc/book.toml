@@ -1,0 +1,6 @@
+[book]
+authors = ["Artyom Tetyukhin"]
+language = "en"
+multilingual = false
+src = "src"
+title = "WakaTime Bot"

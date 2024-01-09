@@ -3,10 +3,10 @@ use crate::port::UploadContentPort;
 use crate::application::config::GitConfig;
 
 use async_trait::async_trait;
-use color_eyre::eyre::{Ok, Result};
+use color_eyre::eyre::{eyre, Ok, Result};
 
-use std::fs::OpenOptions;
-use std::io::{self, Read, Seek, SeekFrom, Write};
+use std::fs::{File, OpenOptions};
+use std::io::{self, Read, Write};
 use std::path::Path;
 
 pub struct GitAdapter {
@@ -25,16 +25,16 @@ impl UploadContentPort for GitAdapter {
         let temp_dir = tempfile::Builder::new().prefix("wakatime_bot_").tempdir()?;
         let target_file_path = temp_dir.path().join(&self.cfg.file_path);
 
-        println!("{:?}", &temp_dir.path());
-
         let repo_path = temp_dir.path();
-        self.download_repo(&repo_path)?;
-        self.insert_metrics(&target_file_path, &metrics)?;
-        self.make_commit(&repo_path)?;
-        self.push_branch_to_remote(&repo_path)?;
 
-        let leaked_temp_dir = Box::new(temp_dir);
-        std::mem::forget(leaked_temp_dir);
+        self.download_repo(repo_path)?;
+        self.insert_metrics(&target_file_path, &metrics)?;
+
+        let has_changes = self.has_changes(repo_path)?;
+        if has_changes {
+            self.make_commit(repo_path)?;
+            self.push_branch_to_remote(repo_path)?;
+        }
 
         Ok(())
     }
@@ -60,7 +60,7 @@ impl GitAdapter {
             .join(&self.cfg.repository)?
             .to_string();
 
-        let repo = builder.clone(&url, &local_path)?;
+        let repo = builder.clone(&url, local_path)?;
         repo.find_remote("origin")?
             .fetch(&[&self.cfg.branch_name], None, None)?;
 
@@ -68,8 +68,7 @@ impl GitAdapter {
     }
 
     fn insert_metrics(&self, file_path: &Path, metrics: &str) -> Result<()> {
-        let mut file = OpenOptions::new().read(true).write(true).open(file_path)?;
-
+        let mut file = File::open(&file_path)?;
         let mut content = String::new();
         file.read_to_string(&mut content)?;
 
@@ -83,16 +82,31 @@ impl GitAdapter {
             "End block not found",
         ))?;
 
-        let after_insertion_content = content.split_off(end_pos);
+        if begin_pos < end_pos {
+            content.replace_range(begin_pos..end_pos, metrics);
+        } else {
+            return Err(eyre!("Invalid positions for replacement"));
+        }
 
-        file.seek(SeekFrom::Start(begin_pos as u64))?;
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&file_path)?;
 
-        file.write("\n".as_bytes())?;
-        file.write_all(metrics.as_bytes())?;
-        file.write("\n".as_bytes())?;
-        file.write_all(after_insertion_content.as_bytes())?;
+        file.write_all(content.as_bytes())?;
 
         Ok(())
+    }
+
+    fn has_changes(&self, repo_path: &Path) -> Result<bool> {
+        let repo = git2::Repository::open(repo_path)?;
+
+        let statuses = repo.statuses(None)?;
+        let has_changes = statuses
+            .iter()
+            .any(|entry| entry.status() != git2::Status::CURRENT);
+
+        Ok(has_changes)
     }
 
     fn make_commit(&self, repo_path: &Path) -> Result<()> {
@@ -117,7 +131,7 @@ impl GitAdapter {
             Some("HEAD"),
             &author_signature,
             &committer_signature,
-            &commit_message,
+            commit_message,
             &new_tree,
             &[&parent],
         )?;

@@ -22,15 +22,13 @@ impl HttpClientBuilder {
 
         let client = Client::builder()
             .user_agent(APP_USER_AGENT)
-            .timeout(self.cfg.timeout.into())
+            .timeout(self.cfg.timeout)
             .build()
             .unwrap();
 
-        let client = ClientBuilder::new(client)
+        ClientBuilder::new(client)
             .with(LoggingMiddleware)
             .with(RetryTransientMiddleware::new_with_policy(retry_policy))
-            .build();
-
-        client
+            .build()
     }
 }

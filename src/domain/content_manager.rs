@@ -49,6 +49,8 @@ where
         let metrics = self.data_port.get_metrics().await?;
         let mut buf = String::with_capacity(1024);
 
+        write!(&mut buf, "\n```text\n")?;
+
         if self.cfg.show_title {
             self.make_title(&mut buf, &metrics.data.range)?;
         }
@@ -62,7 +64,9 @@ where
             )?;
         }
 
-        debug!("{}", buf);
+        write!(&mut buf, "\n```\n")?;
+
+        debug!("{}", &buf);
 
         self.content_uploader.upload_content(buf).await?;
 
@@ -97,7 +101,7 @@ where
         Ok(())
     }
 
-    fn make_table(&self, buf: &mut String, languages: &Vec<Language>) -> Result<()> {
+    fn make_table(&self, buf: &mut String, languages: &[Language]) -> Result<()> {
         for language in languages.iter().take(self.cfg.language_count) {
             if (language.total_seconds as u64) < self.cfg.threshold.as_secs() {
                 continue;
@@ -105,20 +109,20 @@ where
 
             let progress_bar = self.make_progress_bar(language.percent);
 
-            write!(
+            writeln!(
                 &mut *buf,
-                "{:<10} {:>16} {} {:>6.2} %\n",
+                "{:<10} {:>16} {} {:>6.2} %",
                 language.name, language.text, progress_bar, language.percent,
             )?;
         }
 
-        write!(&mut *buf, "\n")?;
+        writeln!(&mut *buf)?;
 
         Ok(())
     }
 
     fn make_progress_bar(&self, percent: f64) -> String {
-        let progress_bar_len = self.cfg.progress_bar_len as usize;
+        let progress_bar_len = self.cfg.progress_bar_len;
         let block_style = &self.cfg.block_style;
 
         let mut progress_bar = String::with_capacity(progress_bar_len);
