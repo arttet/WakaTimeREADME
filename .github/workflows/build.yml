@@ -143,9 +143,14 @@ jobs:
           path: target/doc
 
       - name: Deploy the book
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: book
+          path: doc/book
+
+      - name: Deploy GitHub pages
+        uses: actions/upload-pages-artifact@v3
+        with:
           path: doc/book
 
   github-pages:
@@ -170,5 +175,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        with:
-          artifact_name: book
