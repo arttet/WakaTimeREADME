@@ -68,7 +68,7 @@ impl GitAdapter {
     }
 
     fn insert_metrics(&self, file_path: &Path, metrics: &str) -> Result<()> {
-        let mut file = File::open(&file_path)?;
+        let mut file = File::open(file_path)?;
         let mut content = String::new();
         file.read_to_string(&mut content)?;
 
@@ -91,7 +91,7 @@ impl GitAdapter {
         let mut file = OpenOptions::new()
             .write(true)
             .truncate(true)
-            .open(&file_path)?;
+            .open(file_path)?;
 
         file.write_all(content.as_bytes())?;
 
