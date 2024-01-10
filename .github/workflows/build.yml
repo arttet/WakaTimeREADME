@@ -101,9 +101,9 @@ jobs:
             toolchain: stable
             os: ubuntu-latest
 
-          - target: x86_64-unknown-linux-musl
+          - target: x86_64-apple-darwin
             toolchain: stable
-            os: ubuntu-latest
+            os: macos-latest
 
     permissions:
       checks: write
@@ -141,8 +141,7 @@ jobs:
             target/nextest/**/*.xml
 
 
-  publish-test-results:
-    name: "Publish Tests Results"
+  test-results:
     runs-on: ubuntu-latest
     needs: test
     if: success() || failure()
