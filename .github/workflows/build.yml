@@ -100,11 +100,6 @@ jobs:
           name: ${{ matrix.target }}-test-results
           path: target/nextest/**/*.xml
 
-      - name: Publish Test Results Summary
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          files: "artifacts/**/*.xml"
-
       - name: Publish Test Report
         uses: dorny/test-reporter@v1
         if: success() || failure()
