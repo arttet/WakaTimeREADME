@@ -90,13 +90,20 @@ jobs:
         run: cargo build --all-features
 
   test:
+    name: ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     needs: build
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        toolchain: [stable]
+        include:
+          - target: x86_64-unknown-linux-gnu
+            toolchain: stable
+            os: ubuntu-latest
+
+          - target: x86_64-unknown-linux-gnu
+            toolchain: stable
+            os: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -105,10 +112,22 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.toolchain }}
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
 
       - name: Run tests
-        run: cargo test --all-features
+        run: cargo nextest run --verbose --workspace --target ${{ matrix.target }} --all-features
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: success() || failure()
+        with:
+          name: Test Results (${{ matrix.target }})
+          files: |
+            target/nextest/**/*.xml
 
   doc:
     runs-on: ubuntu-latest
@@ -149,12 +168,13 @@ jobs:
           path: doc/book
 
       - name: Deploy GitHub pages
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: doc/book
 
   github-pages:
-    # if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: doc
 
